@@ -79,7 +79,7 @@ try {
     $attributes.GetEnumerator() | foreach {
       $newParameter = $_;
       $currentParameter = Get-ItemProperty ("IIS:\AppPools\" + $name) $newParameter.Key
-      if(-not $currentParameter -or ($currentParameter.Value -as [String]) -ne $newParameter.Value) {
+      if(-not $currentParameter -or ($currentParameter -as [String]) -ne $newParameter) {
         Set-ItemProperty ("IIS:\AppPools\" + $name) $newParameter.Key $newParameter.Value
         $result.changed = $TRUE
       }
@@ -90,9 +90,13 @@ try {
       Stop-WebAppPool -Name $name -ErrorAction Stop
       $result.changed = $TRUE
     }
-    if ((($state -eq 'started') -and ($pool.State -eq 'Stopped')) -or ($state -eq 'restarted')) {
+    if ((($state -eq 'started') -and ($pool.State -eq 'Stopped'))) {
       Start-WebAppPool -Name $name -ErrorAction Stop
       $result.changed = $TRUE
+    }
+    if ($state -eq 'restarted') {
+      Restart-WebAppPool -Name $name
+      $result.changed = $TRUE   
     }
   }
 } catch {

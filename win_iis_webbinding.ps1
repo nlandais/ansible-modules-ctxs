@@ -40,19 +40,19 @@ $binding_parameters = New-Object psobject @{
   Name = $name
 };
 
-If ($params.host_header) {
+If (Get-Attr $params "host_header" $FALSE) {
   $binding_parameters.HostHeader = $params.host_header
 }
 
-If ($params.protocol) {
+If (Get-Attr $params "protocol" $FALSE) {
   $binding_parameters.Protocol = $params.protocol
 }
 
-If ($params.port) {
+If (Get-Attr $params "port" $FALSE) {
   $binding_parameters.Port = $params.port
 }
 
-If ($params.ip) {
+If (Get-Attr $params "ip" $FALSE) {
   $binding_parameters.IPAddress = $params.ip
 }
 
