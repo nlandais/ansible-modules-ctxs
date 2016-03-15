@@ -30,18 +30,19 @@ $name = Get-Attr $params -name "name" -default $env:computername
 $state = Get-Attr -obj $params -name "state" -default "present"
 $domain = Get-Attr $params -name "domain" -failifempty $true
 $password = Get-Attr $params -name "password" -failifempty $true
-
+$output = "$name has been successfully added to the $domain domain"
 # Create PSCredential Object and un/join the domain
 try {
     $encrypted_password = ConvertTo-SecureString $password -AsPlainText -Force
     $Credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $user,$encrypted_password
     if (($state -eq "present") -and ($name -ne $env:computername)) {
-        $output = Add-Computer -NewName $name -Credential $Credential -DomainName $domain -Force
-    } else {
-        $output = Add-Computer -ComputerName $name -Credential $Credential -DomainName $domain -Force
+           Add-Computer -NewName $name -Credential $Credential -DomainName $domain -Force
+    } elseif  (($state -eq "present") -and ($name -eq $env:computername)) {
+           Add-Computer -ComputerName $name -Credential $Credential -DomainName $domain -Force
     }
     if ($state -eq "absent") {
-        $output = Remove-Computer -ComputerName $name -UnjoinDomainCredential $Credential -Force 
+        Remove-Computer -ComputerName $name -UnjoinDomainCredential $Credential -Force
+        $output = "$name has been uccessfully removed from the $domain domain"
     }
     Set-Attr $result "name" $name;
     Set-Attr $result "domain" $domain
