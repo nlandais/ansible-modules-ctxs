@@ -30,6 +30,7 @@ $name = Get-Attr $params -name "name" -default $env:computername
 $state = Get-Attr -obj $params -name "state" -default "present"
 $domain = Get-Attr $params -name "domain" -failifempty $true
 $password = Get-Attr $params -name "password" -failifempty $true
+$reboot = Get-Attr $params -name "reboot" -default $false
 $output = "$name has been successfully added to the $domain domain"
 # Create PSCredential Object and un/join the domain
 try {
@@ -42,8 +43,14 @@ try {
     }
     if ($state -eq "absent") {
         Remove-Computer -ComputerName $name -UnjoinDomainCredential $Credential -Force
-        $output = "$name has been uccessfully removed from the $domain domain"
+        $output = "$name has been successfully removed from the $domain domain"
     }
+    if ($reboot -eq $true )
+    {
+        Restart-Computer -force
+        $output = "$($output) and the computer has been successfully rebooted."
+    }
+
     Set-Attr $result "name" $name;
     Set-Attr $result "domain" $domain
     Set-Attr $result "output" $output
