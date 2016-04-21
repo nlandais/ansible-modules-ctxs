@@ -49,7 +49,12 @@ options:
       - AD Domain password associated 
     required: true
     default: null
-    aliases: []  
+    aliases: []
+  reboot:
+    description:
+      - Indicates whether a reboot is desired after a domain join
+      required: false
+      default: false  
   state:
     description:
       - Flag to select whether to join or unjoin the AD domain
@@ -68,6 +73,7 @@ EXAMPLES = '''
     domain: "domain.local"
     user: "domain\user"
     password: "qwert123#"
+    reboot: true
 
   # Remove machine from the domain
   win_join_domain:
