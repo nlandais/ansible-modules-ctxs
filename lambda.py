@@ -77,10 +77,6 @@ options:
       - S3 object (the deployment package) version you want to upload.
     required: false
     aliases: ['s3_object_version']
-  local_path:
-    description:
-      - Complete local file path of the deployment package bundled in a ZIP archive.
-    required: true
   handler:
     description:
       - The function within your code that Lambda calls to begin execution.
@@ -162,7 +158,6 @@ EXAMPLES = '''
       description: lambda function description
       code_s3_bucket: package-bucket
       code_s3_key: "lambda/{{ deployment_package }}"
-      local_path: "{{ project_folder }}/{{ deployment_package }}"
       runtime: python2.7
       timeout: 5
       handler: lambda.handler
@@ -277,12 +272,6 @@ def validate_params(module, aws):
     if len(function_name) > 64:
         module.fail_json(msg='Function name "{0}" exceeds 64 character limit'.format(function_name))
 
-    # validate local path of deployment package
-    local_path = module.params['local_path']
-
-    if not os.path.isfile(local_path):
-        module.fail_json(msg='Invalid local file path for deployment package: {0}'.format(local_path))
-
     # parameter 'version' can only be used with state=absent
     if module.params['state'] == 'present' and module.params['version'] > 0:
         module.fail_json(msg="Cannot specify a version with state='present'.")
@@ -293,51 +282,6 @@ def validate_params(module, aws):
         module.params['role'] = 'arn:aws:iam::{0}:role/{1}'.format(aws.account_id, role)
 
     return
-
-
-def upload_to_s3(module, aws):
-    """
-    Upload local deployment package to s3.
-
-    :param module: Ansible module reference
-    :param aws: AWS client connection
-    :return:
-    """
-
-    client = aws.client('s3')
-    s3 = S3Transfer(client)
-
-    local_path = module.params['local_path']
-    s3_bucket = module.params['s3_bucket']
-    s3_key = module.params['s3_key']
-
-    try:
-        s3.upload_file(local_path, s3_bucket, s3_key)
-    except Exception as e:
-        module.fail_json(msg='Error uploading package to s3: {0}'.format(e))
-
-    return
-
-
-def get_local_package_hash(module):
-    """
-    Returns the base64 encoded sha256 hash value for the deployment package at local_path.
-
-    :param module:
-    :return:
-    """
-
-    local_path = module.params['local_path']
-
-    block_size = os.statvfs(local_path).f_bsize
-    hash_lib = hashlib.sha256()
-
-    with open(local_path, 'rb') as zip_file:
-        for data_chunk in iter(lambda: zip_file.read(block_size), b''):
-            hash_lib.update(data_chunk)
-
-    return base64.b64encode(hash_lib.digest())
-
 
 def get_lambda_config(module, aws):
     """
@@ -389,16 +333,6 @@ def lambda_function(module, aws):
 
     if state == 'present':
         if current_state == 'present':
-
-            # check if the code has changed
-            s3_hash = facts.get(pc('code_sha256'))
-            local_hash = get_local_package_hash(module)
-
-            if s3_hash != local_hash:
-                # code has changed so upload to s3
-                if not module.check_mode:
-                    upload_to_s3(module, aws)
-
                 api_params = set_api_params(module, ('function_name', ))
                 api_params.update(set_api_params(module, ('s3_bucket', 's3_key', 's3_object_version')))
 
@@ -505,7 +439,6 @@ def main():
         s3_bucket=dict(required=True, default=None, aliases=['code_s3_bucket']),
         s3_key=dict(required=True, default=None, aliases=['code_s3_key']),
         s3_object_version=dict(required=False, default=None, aliases=['code_s3_object_version']),
-        local_path=dict(required=True, default=None),
         subnet_ids=dict(type='list', required=False, default=[], aliases=['vpc_subnet_ids']),
         security_group_ids=dict(type='list', required=False, default=[], aliases=['vpc_security_group_ids']),
         timeout=dict(type='int', required=False, default=3),
