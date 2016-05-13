@@ -389,9 +389,7 @@ def lambda_function(module, aws):
                     module.fail_json(msg='Error publishing version: {0}'.format(e))
 
         else:  # create function
-            if not module.check_mode:
-                upload_to_s3(module, aws)
-
+            
             api_params = set_api_params(module, ('function_name', 'runtime', 'role', 'handler'))
             api_params.update(set_api_params(module, ('memory_size', 'timeout', 'description', 'publish')))
             api_params.update(Code=set_api_params(module, ('s3_bucket', 's3_key', 's3_object_version')))
