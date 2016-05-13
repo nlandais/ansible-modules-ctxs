@@ -333,15 +333,15 @@ def lambda_function(module, aws):
 
     if state == 'present':
         if current_state == 'present':
-                api_params = set_api_params(module, ('function_name', ))
-                api_params.update(set_api_params(module, ('s3_bucket', 's3_key', 's3_object_version')))
+            api_params = set_api_params(module, ('function_name', ))
+            api_params.update(set_api_params(module, ('s3_bucket', 's3_key', 's3_object_version')))
 
-                try:
-                    if not module.check_mode:
-                        results = client.update_function_code(**api_params)
-                    changed = True
-                except (ClientError, ParamValidationError, MissingParametersError) as e:
-                    module.fail_json(msg='Error updating function code: {0}'.format(e))
+            try:
+                if not module.check_mode:
+                    results = client.update_function_code(**api_params)
+                changed = True
+            except (ClientError, ParamValidationError, MissingParametersError) as e:
+                module.fail_json(msg='Error updating function code: {0}'.format(e))
 
             # check if config has changed
             config_changed = False
